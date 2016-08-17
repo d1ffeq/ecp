@@ -1,0 +1,980 @@
+
+
+
+
+
+
+
+
+
+
+
+
+                E C P  U s e r  M a n u a l
+
+
+
+
+
+
+
+
+
+
+
+
+    ECP  is  a  simple cryptographic tool for encryption
+and  signing.  It uses elliptic curve public key crypto-
+graphy  algorithms  to  provide both confidentiality and 
+authenticity  of encrypted and signed messages/files. If
+you are unfamiliar with public key cryptography concepts
+and  tools  such  as  GnuPG, it is advised to read about
+basic principles of their operation. 
+
+
+
+
+
+
+
+
+1. G e t t i n g  s t a r t e d
+
+
+
+
+    1.1 Installing ECP
+
+    ECP  is  available on Windows and Linux. It can
+run  on  other  Unix-like  systems  if  you  install all
+dependencies required (see below). 
+
+    Windows:
+    --------
+- Download Windows release: 
+https://github.com/d1ffeq/ecp/releases
+- (optional) Verify  package  signature with GnuPG
+- Unzip ecp.zip to a folder
+
+Windows  version is designed to be portable application,
+contained in one folder.
+
+
+    Linux:
+    ------
+- Install dependencies: 
+    $ sudo apt-get install git python openssl python-qt4
+- Clone repository: 
+    $ git clone http://github.com/d1ffeq/ecp.git
+
+
+
+
+    1.2 Running ECP
+
+    By  default,  ECP  comes  in  two versions: GUI
+version  and  CLI  version.  GUI  version  is  more con-
+venient  for  day-to-day  use on desktop. CLI version is
+useful  for  scripts  and  automation. Both versions are
+cross-platform and  have  identical features. This guide
+will describe both versions. 
+
+    You  can  use  CLI  version interactively, by simply
+running  it,  or  non-interactively, by passing commands
+and arguments to it in terminal/shell.
+
+    For more real-world command line examples, see shell
+script comments in /manual/scripts/ directory.
+
+    Windows:
+    --------
+- To run GUI version, double-click ecp.exe
+- To run CLI version, double-click ecp-cli.exe
+
+Program window or terminal with prompt will appear.
+
+
+    Linux:
+    ------
+- To run GUI version: 
+    $ python2 path/to/ecp.py
+- To run CLI version: 
+    $ python2 path/to/ecp-cli.py
+
+    You  can  create  a  command  line  alias  for  con-
+venience by adding following line in ~/.bashrc file:
+
+alias ecp='python2 path/to/ecp.py'
+
+Entering "ecp" command will run it. 
+
+
+
+
+
+
+
+
+2. U s i n g  E C - C r y p t 
+
+
+
+
+    2.1 Creating a key
+
+    Before  encrypting or signing messages or files, you
+must  create  a  key.  This key will form an identity by
+which  other  ECP users will identify you. This key
+is  a cryptographic private+public keypair that ECP
+stores.  To prevent ambiguity, ECP program and this
+manual  uses  term  "MasterKey"  for  such  keypair, and
+"Contact public key"  or  just "Contact" for public keys
+of other ECP users. 
+
+    In  both  CLI  and  GUI version keys are referred by
+their unique identificator - ID. Key ID is alpha-numeric
+upper-case string, 8 characters long, for example: 
+ABC0XYZ1
+
+    A  string  that  starts  with  "ECP" is a public
+part  of  your  key,  you  must  distribute  it to other
+ECP  users  you  wish  to  communicate  with. It is
+advised that you edit key and add alias (a name) for it.
+See section 2.10.1 on how to set a key alias.
+
+    GUI version:
+    ------------
+- Go to "MasterKeys" tab
+- Click "Generate Key" in upper left corner
+
+A password prompt window will appear. Enter password for
+your key and hit Enter. 
+
+Note: Carefully  choose your key password. Always choose
+strong  passwords with special symbols and longer than 8
+characters.
+
+Note: If you want to leave Master Key unprotected, press
+Enter without entering any password.
+
+After that, new Master Key will be generated. Status bar
+below  will display ID of the newly generated key. After
+that, on the same tab, click drop-down "Choose MasterKey
+to  display".  A  string that starts with "ECP" will
+appear in line below. This is a public part of your key.
+
+
+    CLI version:
+    ------------
+- Enter following command:
+> gen-key
+
+A  password  prompt will appear. Enter password for your
+key and hit Enter. 
+
+Note: Carefully  choose your key password. Always choose
+strong  passwords with special symbols and longer than 8
+characters.
+
+Note: If you want to leave Master Key unprotected, press
+Enter without entering any password.
+
+- ID of the generated key will be printed. After that,
+print MasterKeys info by entering command: 
+> master-keys
+
+Note  which  ID  was generated in previous notification,
+and copy public key string that starts with "ECP". 
+
+
+
+
+    2.2 Adding a contact key
+
+    After  receiving  Contact  keys  of  other  ECP
+users, you need to add them to your keyring. 
+
+    GUI version:
+    ------------
+- Go to "Contacts" tab
+- Paste contact key in "Add contact" form 
+- Click "Add" button
+
+Before  clicking  "Add"  button,  make sure there are no
+leading or trailing spaces when you paste key string. 
+
+
+    CLI version:
+    ------------
+- Enter command:
+> add-contact --public-key KEY --alias ALIAS
+
+, where  KEY  is  public key string and ALIAS is a key 
+alias.  You  can leave --alias option out, then ECP
+will assign "(none)" alias. 
+
+    Keyring  is  stored  in human-readable configuration
+file in /keyring/contact_keyring.dat Editing it directly
+is possible, but you must preserve structure or you will
+loose all keys. 
+
+
+
+
+    2.3 Encrypting
+    
+    Encrypting  messages  allows  users  to  communicate
+privately. ECP encrypted messages provide confiden-
+tiality  of  contents  and  authenticity  of the sending
+party. 
+
+    Currently, there are two encryption modes:
+
+* Normal  mode. Default mode of encryption. Though it is
+easier  to  handle  internally  and thus fastest, it MAY 
+REVEAL  identities  of  BOTH  COMMUNICATING  PARTIES  if
+encrypted message is INTERCEPTED. 
+
+* Incognito mode. This mode does not include identity of
+the sending party, so receiving parties won't be able to
+tell  origins of the message. It DOES REVEAL identity of
+RECEIVING PARTIES to the observer though. 
+
+    Besides  encryption  modes, there are two additional
+encryption options that can be combined with both normal
+and incognito modes:
+
+* Hide  IDs.  This  option adds outer encrypted layer to
+hide  identificators  of both sending and receiving par-
+ties,  so  that  observer won't be able to tell for whom
+the  message is encrypted for. It DOES REVEAL the NUMBER
+OF RECEIVERS though. 
+
+* Binary  output.  Option  to write encrypted message in
+non-encoded, human-unreadable raw data form. This option
+can be useful for limited disk space or bandwidth, since
+MIME-encoding adds approx. 34% to the size of message.
+
+    After  encryption,  you  need  to transmit encrypted
+message.  In  case of MIME-encoding, message begins with
+header:
+
+-----BEGIN ECP MESSAGE-----
+
+, and ends with header:
+-----END ECP MESSAGE-----
+
+Note: Entire message INCLUDING HEADERS is required to be
+sent in order to be decrypted!
+
+    GUI version:
+    ------------
+- Go to "New Message" tab
+- Compose or paste message in "Message" field
+- In  upper  right  corner,  choose  your MasterKey from
+  drop-down list
+- Select  message recipients in table by checking check-
+  boxes.
+
+To  set  Incognito  mode, set "Incognito" radiobutton in
+upper left corner. 
+
+To set Hide IDs option, click Hide IDs checkbox in upper
+left corner. 
+
+To  write  encrypted message to binary file, set "Output
+to Binary" radiobutton. 
+
+- Finally, press "Encrypt" button 
+
+If  chosen  key  is protected with password, you will be
+prompted to enter it.
+
+Encryption  options  are  set  on  per message basis, so
+after  encrypting  a  message,  options  are set back to
+default.  If  binary  output option is set on, encrypted
+message will be written to a file in /encrypted/ folder,
+and file name will be shown in status bar. 
+
+
+    CLI version:
+    ------------
+- Choose MasterKey to encrypt with. To list all 
+MasterKeys, enter command:
+> master-keys
+- Upper-case section name in square brackets is key ID
+- Choose Contacts to encrypt for. To list all Contacts,
+enter command:
+> contacts
+- To encrypt, enter command:
+> encrypt --master-key YOURID --contact-id THEIRID1 
+THEIRID2 THEIRID3 --msg file.txt --output out.asc
+
+, where: 
+YOURID is MasterKey ID; 
+THEIRID is list of contact IDs you encrypt message for;
+file.txt  is  text message you want to encrypt (UTF-8 is
+the advised encoding for interoperability concerns);
+out.asc is encrypted output file; 
+
+To encrypt message for multiple users, separate IDs with
+spaces. 
+
+To set Incognito mode, add --incognito to the command.
+
+To set Hide IDs option, add --hide-ids to the command. 
+
+If  chosen  key  is protected with password, you will be
+prompted to enter it.
+
+If  no output argument provided, message will be printed
+in  the  terminal. This can be useful to prevent message
+leaving trace on disk drive. 
+
+
+
+
+    2.4 Decrypting
+
+    After  receiving  encrypted  message,  you  have  to
+decrypt  it in order to read its contents. Due to nature
+of  cryptographic  algorithms,  only owner of the key(s)
+can decrypt message addressed to that key(s).
+
+    If  sender  of  the message is unknown (i.e. no such
+key  in  the  keyring),  senders public key will be dis-
+played  after  decryption. You can add it to the keyring
+after decryption. 
+    See section 2.2 on how to add a Contact key.
+
+    GUI version:
+    ------------
+To decrypt MIME-encoded message: 
+- Go to "Decrypt Message" tab
+- Copy & paste message in message field
+- Click "Decrypt" button
+
+To decrypt binary message:
+- Click "Decrypt Binary" radiobutton
+- Click "..." button and choose file to decrypt
+- Click "Decrypt" button
+
+If  a  key message encrypted for is protected with pass-
+word, you will be prompted to enter it.
+
+If  decryption  successful,  status  bar will show green
+status  and  decrypted  message  will  be  displayed  in
+message field. Information about sender ID and receiving
+parties will be displayed in upper right corner. Message
+information is selectable and can be copied. 
+
+If  decryption  fails,  status  bar  will show red error
+status.
+
+
+    CLI version:
+    ------------
+To decrypt MIME-encoded message, enter command: 
+> decrypt --msg message.enc --output plain.txt
+
+, where: 
+message.enc is a message to be decrypted;
+plain.txt is a file to write decrypted message to;
+
+To  decrypt binary file, add --binary option to command.
+
+If  a  key message encrypted for is protected with pass-
+word, you will be prompted to enter it.
+
+If  no output argument provided, message will be printed
+in the terminal.
+
+
+
+
+    2.5 Signing text
+
+    Cryptographic  signing has the same purpose as hand-
+written  signature on paper - it allows others to verify
+that  this  public  text  is  authentic and it is indeed
+originates  from person it was signed by (i.e. the owner
+of corresponding key). Digital signatures also make text
+tamper-resistant. Any subsequent modification made after
+signing will break signature and it will become apparent
+during signature verification.
+
+Note: When  composing  a  text  to  sign, make sure your
+editor uses UTF-8 encoding. This will ensure that signa-
+ture  won't  get  broken in transit, after copy/pasting,
+etc.
+
+    Currently,  there  is  a  signing  option to include
+timestamp  in  signature, though be advised that it will
+reveal  your  computers information, e.g. time zone your
+computer is set to use and precise clock. 
+
+    After  signing, you need to transmit signed message.
+Every signed message begins with header:
+
+-----BEGIN ECP SIGNED MESSAGE-----
+
+, and ends with header:
+-----END ECP SIGNATURE-----
+
+Note: Entire message INCLUDING HEADERS is required to be
+sent in order to be verified.
+
+    GUI version:
+    ------------
+- Go to "Sign" tab
+- Compose or paste message in "Message" field
+- In  upper  right  corner,  choose  your MasterKey from
+  drop-down list
+
+To add timestamp, click "Include Timestamp" checkbox
+
+- Click "Sign" button
+
+If  chosen  key  is protected with password, you will be
+prompted to enter it.
+
+Signed message will appear in message field.
+
+
+    CLI version:
+    ------------
+
+- Choose MasterKey to sign with. To list all 
+MasterKeys, enter command:
+> master-keys
+- Upper-case section name in square brackets is key ID
+- To sign, enter command:
+> sign-message --master-key YOURID --msg file.txt 
+--output out.sig
+
+, where: 
+YOURID is MasterKey ID; 
+file.txt  is text message you want to sign (UTF-8 the
+advised encoding for interoperability concerns);
+out.sig is signed output file; 
+
+To add timestamp, add --timestamp option to command.
+
+If  chosen  key  is protected with password, you will be
+prompted to enter it.
+
+If  no  output argument provided, signed message will be
+printed in the terminal.
+
+
+
+
+    2.7 Verifying text signature
+
+    Verifying text signature has two purposes: to ensure
+authenticity  of  the  sender who signed public message,
+and check integrity of its contents. 
+
+    GUI version:
+    ------------
+- Go to "Verify" tab
+- Paste signed text in message field
+- Click "Verify" button
+
+If signature is valid, status bar will show green status
+and information will be displayed in upper right corner.
+
+If  signature is invalid, status bar will show red error
+status.
+
+
+    CLI version:
+    ------------
+- To verify signed text, enter command:
+> verify-message --msg file.txt
+
+, where:
+file.txt is a file containing signed message;
+
+Verification  status will be printed, along with message
+information.
+
+
+
+
+    2.8 Signing files
+
+    Signing  files  has  the  same  purpose  as  signing
+text - to  provide  authenticity  and  integrity. Unlike
+signed  text,  file  signature is detached from data and
+written to a separate file.
+
+    Same as text signatures, file signatures can include
+timestamp.
+
+    GUI version:
+    ------------
+- Go to "Sign" tab 
+- Click "Sign file" radiobutton
+- In  upper  right  corner,  choose  your MasterKey from
+  drop-down list
+- Click "..." button and choose file to sign
+
+To add timestamp, click "Include Timestamp" checkbox
+
+- Click "Sign" button
+
+If  chosen  key  is protected with password, you will be
+prompted to enter it.
+
+Signature file will be written in the same directory and
+with *.sig added to file name of signed file. 
+
+
+    CLI version:
+    ------------
+- Choose MasterKey to sign with. To list all 
+MasterKeys, enter command:
+> master-keys
+- Upper-case section name in square brackets is key ID
+- To sign file, enter command:
+> sign-file --master-key YOURID --file some_file
+--output some.sig
+
+, where: 
+YOURID is MasterKey ID; 
+some_file is file you want to sign;
+some.sig is signature output file; 
+
+To add timestamp, add --timestamp option to command.
+
+If  chosen  key  is protected with password, you will be
+prompted to enter it.
+
+If  no  output  argument  provided,  signature  will  be
+printed in the terminal.
+
+
+
+
+    2.9 Verifying file signature
+
+    After  signing  a file, a signature is bundled along
+with  file. Verifying  file signature proves that signed
+file was not modified in any way. 
+
+    GUI version:
+    ------------
+- Go to "Verify" tab
+- Click "Verify File Signature" radiobutton
+- Click  "..."  button  in first line and choose file to
+check signature against
+- Click "..." button in second line and choose signature
+for that file
+- Click "Verify" button
+
+If signature is valid, status bar will show green status
+and information will be displayed in upper right corner.
+
+If  signature is invalid, status bar will show red error
+status.
+
+
+    CLI version:
+    ------------
+- To verify signed file, enter command:
+> verify-message --file some_file --signature some.sig
+
+, where:
+some_file is a file to check;
+some.sig is a signature file;
+
+Verification  status  will be printed, along with signa-
+ture information.
+
+
+
+
+    2.10 Managing MasterKeys
+
+    MasterKey  is  a private/public keypair that you and
+only you own. It is essential for security and confiden-
+tiality to keep private part of keypair safe. As already
+mentioned  in section 2.1, there is no built-in key pro-
+tection  mechanism implemented yet, so special attention
+must  be paid to keep MasterKeys secure. They are stored
+in human-readable in /keyring/masterkey_keyring.dat
+
+    DO NOT leave MasterKeys unprotected on computer sys-
+tems  others have access to. To prevent any unauthorised
+access  to  program  and  keyring  meta-data,  it may be
+feasible  to  store entire ECP program in encrypted
+container  and  decrypt  on  demand,  or  use  full disk
+encryption tools to protect whole system. 
+
+    To  prevent accidental MasterKey loss, it is advised
+to  keep  backup of MasterKeys. Read-only storage medium
+with encrypted files is preferred for key backups.
+
+
+
+
+    2.10.1 Setting MasterKey alias
+
+    An  alias  is  a name given to a key. MasterKeys can
+use  assumed  persona  names  (i.e.  your  nickname)  to
+differentiate between keys and/or their application. For
+convenience  sake,  it  is advised to set an alias for a
+MasterKey immediately after generating it. 
+
+    GUI version:
+    ------------
+- Go to "MasterKeys" tab
+- On the right, there is a table with all MasterKeys
+- Look up a row of the key you want to edit in the table
+- Double-click a cell in "Alias" column of appropriate
+key row
+- "Alias" cell will become editable. Type new alias and
+press Enter
+
+
+    CLI version:
+    ------------
+- Choose MasterKey to set an alias for. To list all 
+MasterKeys, enter command:
+> master-keys
+- Upper-case section name in square brackets is key ID
+- To set an alias, enter command:
+> set-key-alias --master-key YOURID --alias Something
+
+, where:
+YOURID is MasterKey ID; 
+Something as an example alias;
+
+To  set  an  alias  with  whitespaces,  escape  them  by
+wrapping  whole  alias  argument  in  double quotes, for
+example: "Some Thing" or "S. Ome Thing"
+
+
+
+
+    2.10.2 Deleting MasterKey
+
+    Deleting  MasterKey  makes it impossible to read any
+subsequent  messages  encrypted  for  this  key. In some
+cases,  this may be required to prevent security breach.
+Deleting MasterKey(s) removes all information about keys
+from keyring - ID, public/private data and alias. 
+
+    Both GUI and CLI versions allow to delete MasterKeys
+in bulk, more than one at a time. 
+
+    GUI version:
+    ------------
+- Go to "MasterKeys" tab
+- On the right, there is a table with all MasterKeys
+- Select MasterKeys you want to delete by clicking
+checkboxes in the first column
+- Click "Delete" button below table
+
+A  warning  prompt  will  appear.  After confirming, all
+selected keys will be deleted.
+
+
+    CLI version:
+    ------------
+- Choose MasterKey to delete. To list all 
+MasterKeys, enter command:
+> master-keys
+- Upper-case section name in square brackets is key ID
+- To delete MasterKey, enter command:
+> del-key --master-key YOURID1 YOURID2 YOURID3
+
+, where:
+YOURID1, YOURID2, YOURID3 are IDs of the MasterKeys
+you want to delete; 
+
+All  listed MasterKeys will be deleted. CLI version does
+not  have  warning  prompt - be  careful  not  to delete
+MasterKey accidentally. 
+
+
+
+
+    2.10.3 Setting MasterKey password
+
+    Since  version  2.1.0,  ECP  features  password
+protection of private keys. Password protection helps to
+prevent  private key compromise and security failure and
+it  is  advised  to use strong secure password to secure
+your MasterKeys. 
+
+    GUI version:
+    ------------
+- Go to "MasterKeys" tab
+- Select  MasterKey  you want to set or change password
+for in bottom dropdown in "Key Password" group
+- Click "Set password" button
+
+Password  input  dialog  will  appear.  If chosen key is
+unprotected,  you will be prompted to enter password. If
+key  is  already protected and you are willing to change
+password, you will have to enter old password than a new
+one.
+
+
+    CLI version:
+    ------------
+- Choose MasterKey to change password for. To list all 
+MasterKeys, enter command:
+> master-keys
+- Upper-case section name in square brackets is key ID
+- To change MasterKey password:
+> set-key-pass --master-key YOURID
+
+Password  input  prompt  will  appear.  If chosen key is
+unprotected,  you will be prompted to enter password. If
+key  is  already protected and you are willing to change
+password, you will have to enter old password than a new
+one.
+
+
+
+    2.10.4 Removing MasterKey password
+
+    In  some  cases,  it is desirable to remove password
+protection  from  the key. For example, to skip entering
+password for each operation.
+
+    GUI version:
+    ------------
+- Go to "MasterKeys" tab
+- Select  MasterKey  you want to remove password from in
+bottom dropdown in "Key Password" group
+- Click "Remove password" button
+
+Password  input  dialog will appear. If key is protected
+and you are willing to remove password, you will have to
+enter password in order to remove protection. 
+
+
+    CLI version:
+    ------------
+- Choose MasterKey to change password for. To list all 
+MasterKeys, enter command:
+> master-keys
+- Upper-case section name in square brackets is key ID
+- To change MasterKey password:
+> set-key-pass --master-key YOURID
+
+Password  input  prompt will appear. If key is protected
+and you are willing to remove password, you will have to
+enter password in order to remove protection. 
+
+
+
+    2.11 Managing Contacts
+
+    Public keys of ECP users are called Contacts to
+differentiate  between  public  part of your own key and
+public  part  of  any  other  user. Contacts are used to
+communicate  with  its  owner,  hence the name. They are
+stored in human-readable in /keyring/contact_keyring.dat
+
+    Same  as  with  MasterKeys keyring, it is advised to
+store  backup  in  encrypted form, preferably read-only
+storage medium.
+
+
+
+
+    2.11.1 Setting Contact alias
+
+    Since  IDs  may  be  hard to memorize, Contact alias
+allows  to  assign  name  to a key. It will be displayed
+next  to ID, also  in message info during decryption and
+verification. 
+
+    GUI version:
+    ------------
+- Go to "Contacts" tab
+- On the right, there is a table with all Contacts
+- Look up a row of the key you want to edit in the table
+- Double-click a cell in "Alias" column of appropriate
+key row
+- "Alias" cell will become editable. Type new alias and
+press Enter
+
+
+    CLI version:
+    ------------
+- Choose Contact to set an alias for. To list all 
+Contacts, enter command:
+> contacts
+- Upper-case section name in square brackets is key ID
+- To set an alias, enter command:
+> set-contact-alias --contact-id THEIRID --alias Alias
+
+, where:
+THEIRID is a Contact ID; 
+Alias as an example alias;
+
+To  set  an  alias  with  whitespaces,  escape  them  by
+wrapping  whole  alias  argument  in  double quotes, for
+example: "Some Thing" or "S. Ome Thing"
+
+
+
+
+    2.11.2 Deleting Contact
+
+    Deleting  Contact  removes all information from key-
+ring file. Unlike MasterKey, which is lost forever after
+being deleted, Contacts may be added back.
+
+    Same  as with deleting MasterKeys, it is possible to
+delete Contacts in bulk, more than one at a time. 
+
+    GUI version:
+    ------------
+- Go to "Contacts" tab
+- On the right, there is a table with all Contacts
+- Select Contacts you want to delete by clicking
+checkboxes in the first column
+- Click "Delete" button below table
+
+A  warning  prompt  will  appear.  After confirming, all
+selected Contacts will be deleted.
+
+
+    CLI version:
+    ------------
+- Choose Contact to delete. To list all 
+Contacts, enter command:
+> contacts
+- Upper-case section name in square brackets is key ID
+- To delete Contacts, enter command:
+> del-contact --contact-id THEIRID1 THEIRID2 THEIRID3
+
+, where:
+THEIRID1, THEIRID2, THEIRID3 are IDs of Contacts
+you want to delete; 
+
+All  listed  Contacts  will be deleted. CLI version does
+not  have  warning  prompt - be  careful  not  to delete
+Contacts accidentally. 
+
+
+
+
+    2.12 Other features
+
+    2.12.1 Shell Scripts
+
+    ECP  package includes several shell scripts for
+Unix-like  operating  systems.  These  shell scripts are
+based on CLI version and added for convenience of users,
+and also as examples of usage.
+
+    Currently, there are 8 scripts included:
+
+* enc.sh - reference  encryption  script. Contains usage
+and option examples. 
+
+* enc_dialog.sh - interactive encryption script. Prompts
+user  to  input  message  to  encrypt,  MasterKey ID and
+Contact  IDs,  prints  MIME-encoded encrypted message in
+the terminal. By default, uses Normal encryption mode.
+
+* dec.sh - reference  decryption  script. Contains usage 
+and option examples. 
+
+* dec_dialog.sh - interactive decryption script. Prompts
+user to input MIME-encoded encrypted message in terminal
+and  decrypts  it,  prints  message  in  terminal, along
+with message information.
+
+* sign.sh - reference text signing script. Contains
+usage and option examples.
+
+* sign_text_dialog.sh - interactive text signing script.
+Prompts user to input text to sign and MasterKey. Prints
+resulted signed text in terminal. 
+
+* verify.sh - reference  text  verification script.
+Contains usage and option examples. 
+
+* verify_text_dialog.sh - interactive  signed text veri-
+fication  script. Prompts user to input signed text then
+displays verification status.
+
+
+
+
+    2.12.2 No verbose option
+
+    Each  command  of CLI version has option to suppress
+ANY  output or notification. No verbose mode suppression
+also works on output-only commands like "contacts" (dis-
+olay contacts) or "master-keys" (display MasterKeys). To
+use no verbose option, add --no-verbose to commands.
+
+    All  internal  error  messages  are also suppressed,
+except command parsing errors (e.g. wrong command name).
+
+
+
+
+    2.12.3 Encrypt to self
+
+    Due  to algorithm properties in message protocol, it
+is  possible  to  encrypt  message  for  your own key as
+one  of  the recipients of the message. This feature may
+be  useful  for  encrypting personal data, or if message
+intended to be decrypted by its creator afterwards.
+
+    To  encrypt message for your own key, add public key
+of  this  MasterKey  to  your  Contacts,  then add it to
+recipients list when encrypting message.
+
+Note: the fact that your key is included will be visible
+to  other  recipients.  In case of key compromise, party
+that possess this key will be able decrypt message.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+EOF
