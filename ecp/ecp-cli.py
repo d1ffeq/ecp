@@ -77,8 +77,8 @@ def check_keyring_files():
         except OSError:
             if not os.path.isdir(norm_keyring_path):
                 raise
-        open('keyring/master_keyring.dat', 'a').close()
-        open('keyring/contact_keyring.dat', 'a').close()
+        open('keyring/master_keyring.dat', 'a+').close()
+        open('keyring/contact_keyring.dat', 'a+').close()
     else:
         if getattr(sys, 'frozen', False):
             localadditionpath = os.path.abspath(sys.executable)
@@ -88,8 +88,8 @@ def check_keyring_files():
         norm_keyring_path = os.path.normcase(keyring_path)
         if not os.path.isdir(norm_keyring_path):
             os.makedirs(norm_keyring_path)
-        open('keyring/master_keyring.dat', 'a+').close()
-        open('keyring/contact_keyring.dat', 'a+').close()
+        open(norm_keyring_path + 'master_keyring.dat', 'a+').close()
+        open(norm_keyring_path + 'contact_keyring.dat', 'a+').close()
 
 
 '''Check if data folders exist'''

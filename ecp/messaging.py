@@ -190,6 +190,7 @@ class DecryptMessage(object):
             raise DecryptException('Corrupted message - signature failure!')
 
 
+
     def form_msg_info(self, their_id, id_list, text, fullmsg):
         '''Method to form information about decrypted message'''
         contact_known = KeyFormatting.check_contact_identity(their_id)

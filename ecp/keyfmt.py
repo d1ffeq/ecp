@@ -1,13 +1,21 @@
 import hashlib
+import os
 import base64
 import codecs
 import base58
 import crypto as Crypto
 from parsing import UnicodeConfigParser 
+
+
+
+
+
+
 cconf = UnicodeConfigParser()
 mconf = UnicodeConfigParser()
-
-
+local = os.path.dirname(__file__)
+master_keyring = os.path.normcase(local + '/keyring/' + 'master_keyring.dat')
+contact_keyring = os.path.normcase(local + '/keyring/' + 'contact_keyring.dat')
 
 
 class KeyException(Exception):
@@ -15,6 +23,7 @@ class KeyException(Exception):
         self.parameter = value
     def __str__(self):
         return repr(self.parameter)
+
 
 
 class Key:
@@ -85,7 +94,7 @@ def unlock_privkey(passwd, b58_priv):
 
 def key_locked(id):
     '''Checks if private key of a given ID is protected by password'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         if 'encrypted_' in mconf.get(id, 'privatekey'):
             return True
@@ -95,32 +104,32 @@ def key_locked(id):
 
 def change_privkey_pass(id, keypass_old, keypass_new):
     '''Decrypts encrypted private key and encrypts with new password'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         unlocked_key_old = unlock_privkey(keypass_old, mconf.get(id, 'privatekey'))
         locked_key_new = lock_privkey(keypass_new, base58.b58encode(unlocked_key_old))
         mconf.set(id, 'privatekey', locked_key_new)
-    with codecs.open('keyring/master_keyring.dat', 'wb+', 'utf-8') as mwrite:
+    with codecs.open(master_keyring, 'wb+', 'utf-8') as mwrite:
         mconf.write(mwrite)
 
 
 def set_masterkey_pass(id, keypass_new):
     '''Encrypts non-protected private key with password'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         locked_key_new = lock_privkey(keypass_new, mconf.get(id, 'privatekey'))
         mconf.set(id, 'privatekey', locked_key_new)
-    with codecs.open('keyring/master_keyring.dat', 'wb+', 'utf-8') as mwrite:
+    with codecs.open(master_keyring, 'wb+', 'utf-8') as mwrite:
         mconf.write(mwrite)
 
 
 def remove_masterkey_pass(id, keypass):
     '''Decrypts private key and writes it back unprotected'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         unlocked_key = unlock_privkey(keypass, mconf.get(id, 'privatekey'))
         mconf.set(id, 'privatekey', base58.b58encode(unlocked_key))
-    with codecs.open('keyring/master_keyring.dat', 'wb+', 'utf-8') as mwrite:
+    with codecs.open(master_keyring, 'wb+', 'utf-8') as mwrite:
         mconf.write(mwrite)
 
 
@@ -202,7 +211,7 @@ def generate_new_master_key(passwd = None):
     If no password provided, does not encrypt private key'''
     new_privkey, new_pubkey = Crypto.generate_new_key()
     new_key_id = form_key_id(new_pubkey)
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         mconf.add_section(new_key_id)
         if passwd is None:
@@ -212,27 +221,27 @@ def generate_new_master_key(passwd = None):
             mconf.set(new_key_id, 'privatekey', enc_privkey)
         mconf.set(new_key_id, 'publickey', (fmt_pub(new_pubkey, 'raw2readable')))
         mconf.set(new_key_id, 'alias', '(none)')
-    with codecs.open('keyring/master_keyring.dat', 'wb+', 'utf-8') as mwrite:
+    with codecs.open(master_keyring, 'wb+', 'utf-8') as mwrite:
         mconf.write(mwrite)
     return new_key_id
 
 
 def edit_masterkey_alias(chosen_master_edit_index, alias_new):
     '''Changes alias for a users Master Key'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         mconf.set(chosen_master_edit_index, 'alias', alias_new)
-    with codecs.open('keyring/master_keyring.dat', 'wb+', 'utf-8') as mwrite:
+    with codecs.open(master_keyring, 'wb+', 'utf-8') as mwrite:
         mconf.write(mwrite)
 
 
 def delete_master_key(id_list):
     '''Removes Master Keys, given a list of their IDs'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         for id in id_list:
             mconf.remove_section(id)
-    with codecs.open('keyring/master_keyring.dat', 'wb+', 'utf-8') as mwrite:
+    with codecs.open(master_keyring, 'wb+', 'utf-8') as mwrite:
         mconf.write(mwrite)
 
 
@@ -240,7 +249,7 @@ def pick_any_masterkey_from_id_list(key_id_list):
     '''Given a list of IDs, picks first encounter of a found users Master Key ID
     
     Raises exception if none found'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as master_keyring:
+    with codecs.open(master_keyring, 'r', 'utf-8') as master_keyring:
         mconf.readfp(master_keyring)
         known_keys = mconf.sections()
         for id in known_keys:
@@ -254,7 +263,7 @@ def retrieve_master_keypair(key_id):
     '''Given a key ID, retrive Master Key public/private pair
     
     Raises error if no such ID'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as master_keyring:
+    with codecs.open(master_keyring, 'r', 'utf-8') as master_keyring:
         mconf.readfp(master_keyring)
         known_keys = mconf.sections()
         if any(key_id in id for id in known_keys):
@@ -266,7 +275,7 @@ def retrieve_master_keypair(key_id):
 
 def retrieve_masterkey_id_list():
     '''Returns IDs of users Master Keys'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         masterkey_id_list = mconf.sections()
         return masterkey_id_list
@@ -274,14 +283,14 @@ def retrieve_masterkey_id_list():
 
 def retrieve_master_alias(id):
     '''Returns alias for users Master Key'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         return (mconf.get(id, 'alias'))
 
 
 def retrieve_master_key(id):
     '''Returns public key for users Master Key'''
-    with codecs.open('keyring/master_keyring.dat', 'r', 'utf-8') as mfile:
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
         mconf.readfp(mfile)
         return (mconf.get(id, 'publickey'))
 
@@ -289,7 +298,7 @@ def retrieve_master_key(id):
 
 def retrieve_contactkey_id_list():
     '''Returns IDs of Contacts'''
-    with codecs.open('keyring/contact_keyring.dat', 'r', 'utf-8') as cfile:
+    with codecs.open(contact_keyring, 'r', 'utf-8') as cfile:
         cconf.readfp(cfile)
         contact_key_id_list = cconf.sections()
         return contact_key_id_list
@@ -297,52 +306,52 @@ def retrieve_contactkey_id_list():
 
 def retrieve_contact_alias(id):
     '''Returns alias for contact'''
-    with codecs.open('keyring/contact_keyring.dat', 'r', 'utf-8') as cfile:
+    with codecs.open(contact_keyring, 'r', 'utf-8') as cfile:
         cconf.readfp(cfile)
         return (cconf.get(id, 'alias'))
 
 
 def retrieve_contact_key(id):
     '''Returns public key for contact'''
-    with codecs.open('keyring/contact_keyring.dat', 'r', 'utf-8') as cfile:
+    with codecs.open(contact_keyring, 'r', 'utf-8') as cfile:
         cconf.readfp(cfile)
         return (cconf.get(id, 'publickey'))
 
 
 def delete_contact_key(id_list):
     '''Removes Contacts, given a list of their IDs'''
-    with codecs.open('keyring/contact_keyring.dat', 'r', 'utf-8') as cfile:
+    with codecs.open(contact_keyring, 'r', 'utf-8') as cfile:
         cconf.readfp(cfile)
         for id in id_list:
             cconf.remove_section(id)
-    with codecs.open('keyring/contact_keyring.dat', 'wb+', 'utf-8') as cwrite:
+    with codecs.open(contact_keyring, 'wb+', 'utf-8') as cwrite:
         cconf.write(cwrite)
 
 
 def add_new_contact_key(new_id, new_key):
     '''Adds new contact to contact keyring'''
-    with codecs.open('keyring/contact_keyring.dat', 'r', 'utf-8') as cfile:
+    with codecs.open(contact_keyring, 'r', 'utf-8') as cfile:
         cconf.readfp(cfile)
         known_contacts = cconf.sections()
         cconf.add_section(new_id)
         cconf.set(new_id, 'publickey', new_key)
         cconf.set(new_id, 'alias', '(none)')
-    with codecs.open('keyring/contact_keyring.dat', 'wb+', 'utf-8') as cwrite:
+    with codecs.open(contact_keyring, 'wb+', 'utf-8') as cwrite:
         cconf.write(cwrite)
 
 
 def edit_contact_alias(chosen_contact_edit_index, alias_new):
     '''Changes alias for a contact'''
-    with codecs.open('keyring/contact_keyring.dat', 'r', 'utf-8') as cfile:
+    with codecs.open(contact_keyring, 'r', 'utf-8') as cfile:
         cconf.readfp(cfile)
         cconf.set(chosen_contact_edit_index, 'alias', alias_new)
-    with codecs.open('keyring/contact_keyring.dat', 'wb+', 'utf-8') as cwrite:
+    with codecs.open(contact_keyring, 'wb+', 'utf-8') as cwrite:
         cconf.write(cwrite)
 
 
 def check_contact_identity(key_id):
     '''Checks if contact is already in the keyring'''
-    with codecs.open('keyring/contact_keyring.dat', 'r', 'utf-8') as contact_keyring:
+    with codecs.open(contact_keyring, 'r', 'utf-8') as contact_keyring:
         cconf.readfp(contact_keyring)
         known_contacts = cconf.sections()
         if any(key_id in id for id in known_contacts):
