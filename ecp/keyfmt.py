@@ -249,8 +249,8 @@ def pick_any_masterkey_from_id_list(key_id_list):
     '''Given a list of IDs, picks first encounter of a found users Master Key ID
     
     Raises exception if none found'''
-    with codecs.open(master_keyring, 'r', 'utf-8') as master_keyring:
-        mconf.readfp(master_keyring)
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
+        mconf.readfp(mfile)
         known_keys = mconf.sections()
         for id in known_keys:
             if id in key_id_list:
@@ -263,8 +263,8 @@ def retrieve_master_keypair(key_id):
     '''Given a key ID, retrive Master Key public/private pair
     
     Raises error if no such ID'''
-    with codecs.open(master_keyring, 'r', 'utf-8') as master_keyring:
-        mconf.readfp(master_keyring)
+    with codecs.open(master_keyring, 'r', 'utf-8') as mfile:
+        mconf.readfp(mfile)
         known_keys = mconf.sections()
         if any(key_id in id for id in known_keys):
             return (mconf.get(key_id, 'privatekey')), (mconf.get(key_id, 'publickey'))
@@ -351,8 +351,8 @@ def edit_contact_alias(chosen_contact_edit_index, alias_new):
 
 def check_contact_identity(key_id):
     '''Checks if contact is already in the keyring'''
-    with codecs.open(contact_keyring, 'r', 'utf-8') as contact_keyring:
-        cconf.readfp(contact_keyring)
+    with codecs.open(contact_keyring, 'r', 'utf-8') as cfile:
+        cconf.readfp(cfile)
         known_contacts = cconf.sections()
         if any(key_id in id for id in known_contacts):
             return True
