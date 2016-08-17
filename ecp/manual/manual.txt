@@ -703,7 +703,7 @@ MasterKey accidentally.
 
     2.10.3 Setting MasterKey password
 
-    Since  version  2.1.0,  ECP  features  password
+    Since  version  0.1.0,  ECP  features  password
 protection of private keys. Password protection helps to
 prevent  private key compromise and security failure and
 it  is  advised  to use strong secure password to secure
@@ -765,7 +765,7 @@ MasterKeys, enter command:
 > master-keys
 - Upper-case section name in square brackets is key ID
 - To change MasterKey password:
-> set-key-pass --master-key YOURID
+> del-key-pass --master-key YOURID
 
 Password  input  prompt will appear. If key is protected
 and you are willing to remove password, you will have to
