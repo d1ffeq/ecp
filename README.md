@@ -24,7 +24,7 @@ GUI will appear. To use CLI version, use:
 
 ### Windows
 
-Download release, unpack zip archive and run ecp.exe or ecp-cli.exe
+Download latest release [here](https://github.com/d1ffeq/ecp/releases), unpack zip archive and run ecp.exe or ecp-cli.exe
 
 ## License
 
