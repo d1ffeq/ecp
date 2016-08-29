@@ -464,6 +464,7 @@ def print_contacts(args):
 
 def add_contactkey(args):
     '''Adds Contact public key to keyring'''
+    key_to_add = args.pubkey.replace(' ', '') # remove whitespace from public key string 
     validation = Crypto.check_pubkey(args.pubkey)
     if validation is True:
         new_key_raw = KeyFormatting.fmt_pub(args.pubkey, 'readable2raw')

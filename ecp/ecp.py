@@ -1580,7 +1580,7 @@ class Ui_ECP(QtGui.QMainWindow):
         
         Checks if there fir non-empty string and checks if key is valid before saving'''
         new_contact_key_paste = self.lineEditAddContact.text()
-        new_key = unicode(new_contact_key_paste)
+        new_key = unicode(new_contact_key_paste.replace(' ', '')) # remove whitespace from public key string 
         if not new_key:
             self.show_status_msg('Paste contact key')
         elif new_key:
