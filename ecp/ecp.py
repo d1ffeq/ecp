@@ -959,7 +959,7 @@ class Ui_ECP(QtGui.QMainWindow):
             elif not ok:
                 return None, False
         elif KeyFormatting.key_locked(your_id) is False:
-            return your_id, None, True
+            return None, True
 
 
     def encrypt_message(self):
